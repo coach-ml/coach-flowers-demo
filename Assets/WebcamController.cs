@@ -39,7 +39,7 @@ public class WebcamController : MonoBehaviour
             var prediction = model.Predict(GetTexture()).Best();
 
             var result = $"{prediction.Label}: {prediction.Confidence}";
-            Debug.Log(result);
+            label.text = result;
         }
     }
 
