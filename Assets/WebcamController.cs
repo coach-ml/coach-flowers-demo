@@ -21,8 +21,7 @@ public class WebcamController : MonoBehaviour
         webcamTexture.Play();
 
         var coach = await new CoachClient().Login("A2botdrxAn68aZh8Twwwt2sPBJdCfH3zO02QDMt0");
-        //model = await coach.GetModelRemote("flowers");
-        model = coach.GetModel(Path.Combine(Application.persistentDataPath, "flowers"));
+        model = await coach.GetModelRemote("flowers");
     }
 
     Texture2D GetTexture()
