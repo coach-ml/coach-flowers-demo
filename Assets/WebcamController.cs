@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using Coach;
-using System.IO;
 
 public class WebcamController : MonoBehaviour
 {
@@ -13,7 +12,6 @@ public class WebcamController : MonoBehaviour
 
     async void Start()
     {
-        Debug.Log(Application.persistentDataPath);  
         webcamTexture = new WebCamTexture();
         preview.texture = webcamTexture;
         preview.material.mainTexture = webcamTexture;
