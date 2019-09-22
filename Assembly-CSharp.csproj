@@ -9,7 +9,7 @@
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <RootNamespace></RootNamespace>
-    <ProjectGuid>{772465DC-4F3A-7424-74D4-CC40E9FFDFDF}</ProjectGuid>
+    <ProjectGuid>{9231C281-6246-3194-C6C3-B1EAC88219BD}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>Assembly-CSharp</AssemblyName>
@@ -62,35 +62,34 @@
   <ItemGroup>
     <Compile Include="Assets\Coach-ML\Coach.cs" />
     <Compile Include="Assets\WebcamController.cs" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Experimental.compute" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Conv.compute" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Random.cginc" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\BarracudaReferenceImpl.compute" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Activation.compute" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Broadcast.compute" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\DenseFP16.compute" />
     <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\TexConv.compute" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\ConvOld.compute" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Tensor.cginc" />
-    <None Include="Assets\Coach-ML\BarracudaCore\LICENSE.txt" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\FastNV.compute" />
-    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Dense.compute" />
     <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Generic.compute" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Random.cginc" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Experimental.compute" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Tensor.cginc" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\FastNV.compute" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Activation.compute" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\ConvOld.compute" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\DenseFP16.compute" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\BarracudaReferenceImpl.compute" />
     <None Include="Assets\Coach-ML\LICENSE.txt" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Dense.compute" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Broadcast.compute" />
+    <None Include="Assets\Coach-ML\BarracudaCore\Barracuda\Resources\Conv.compute" />
     <Reference Include="Unity.TextMeshPro.Editor">
-      <HintPath>C:/Users/loren/Documents/flowers-demo/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
+      <HintPath>D:/Documents/work/coach-m/FlowerRecogniser/Library/ScriptAssemblies/Unity.TextMeshPro.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.PackageManagerUI.Editor">
-      <HintPath>C:/Users/loren/Documents/flowers-demo/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
+      <HintPath>D:/Documents/work/coach-m/FlowerRecogniser/Library/ScriptAssemblies/Unity.PackageManagerUI.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.CollabProxy.Editor">
-      <HintPath>C:/Users/loren/Documents/flowers-demo/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
+      <HintPath>D:/Documents/work/coach-m/FlowerRecogniser/Library/ScriptAssemblies/Unity.CollabProxy.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>C:/Users/loren/Documents/flowers-demo/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
+      <HintPath>D:/Documents/work/coach-m/FlowerRecogniser/Library/ScriptAssemblies/Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.DataPrivacy">
-      <HintPath>C:/Users/loren/Documents/flowers-demo/Library/ScriptAssemblies/Unity.Analytics.DataPrivacy.dll</HintPath>
+      <HintPath>D:/Documents/work/coach-m/FlowerRecogniser/Library/ScriptAssemblies/Unity.Analytics.DataPrivacy.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AIModule">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2018.3.14f1/Editor/Data/Managed/UnityEngine/UnityEngine.AIModule.dll</HintPath>
@@ -294,16 +293,16 @@
       <HintPath>C:/Program Files/Unity/Hub/Editor/2018.3.14f1/Editor/Data/UnityExtensions/Unity/UnitySpatialTracking/RuntimeEditor/UnityEngine.SpatialTracking.dll</HintPath>
     </Reference>
     <Reference Include="Barracuda">
-      <HintPath>C:/Users/loren/Documents/flowers-demo/Assets/Coach-ML/BarracudaCore/Barracuda/Barracuda.dll</HintPath>
+      <HintPath>D:/Documents/work/coach-m/FlowerRecogniser/Assets/Coach-ML/BarracudaCore/Barracuda/Barracuda.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.Editor">
-      <HintPath>C:/Users/loren/Documents/flowers-demo/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.Editor.dll</HintPath>
+      <HintPath>D:/Documents/work/coach-m/FlowerRecogniser/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.Editor.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.StandardEvents">
-      <HintPath>C:/Users/loren/Documents/flowers-demo/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.StandardEvents.dll</HintPath>
+      <HintPath>D:/Documents/work/coach-m/FlowerRecogniser/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.StandardEvents.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.Tracker">
-      <HintPath>C:/Users/loren/Documents/flowers-demo/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.Tracker.dll</HintPath>
+      <HintPath>D:/Documents/work/coach-m/FlowerRecogniser/Library/PackageCache/com.unity.analytics@3.2.2/Unity.Analytics.Tracker.dll</HintPath>
     </Reference>
     <Reference Include="netstandard">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2018.3.14f1/Editor/Data/NetStandard/ref/2.0.0/netstandard.dll</HintPath>
@@ -653,16 +652,16 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="MacBLAS.csproj">
-      <Project>{92D368A5-D192-E5CB-3417-1CEBBF50A021}</Project>
+      <Project>{3FCA09E3-D091-DA22-2242-3A2C02AA898D}</Project>
       <Name>MacBLAS</Name>
     </ProjectReference>
-    <ProjectReference Include="Barracuda-editor.csproj">
-      <Project>{6DC5D797-A0FC-AA19-D556-BF4C89D44E28}</Project>
-      <Name>Barracuda-editor</Name>
-    </ProjectReference>
     <ProjectReference Include="iOSBLAS.csproj">
-      <Project>{50A8D24F-CF57-AC00-A051-39C9C380DE4B}</Project>
+      <Project>{5132867C-0000-FE3E-FE73-E7E13875A60A}</Project>
       <Name>iOSBLAS</Name>
+    </ProjectReference>
+    <ProjectReference Include="Barracuda-editor.csproj">
+      <Project>{8168A9A9-2B75-7015-1746-E751F2AAA882}</Project>
+      <Name>Barracuda-editor</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -231,7 +231,7 @@ namespace Coach
 
     public class CoachModel
     {
-        private readonly float COACH_VERSION = 1f;
+        private readonly float COACH_VERSION = 2f;
 
         private string[] Labels { get; set; }
         private ImageDims ImageDims { get; set; }
