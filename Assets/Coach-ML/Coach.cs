@@ -7,6 +7,7 @@ using UnityEngine;
 using Barracuda;
 using UnityEngine.Networking;
 using System.Net;
+using UnityEngine.Serialization;
 
 namespace Coach
 {
@@ -184,10 +185,11 @@ namespace Coach
         ///<summary>
         //Sorted prediction results, descending in Confidence
         ///</summary>
-        public List<LabelProbability> SortedResults { get; private set; }
+        // public List<LabelProbability> SortedResults { get; private set; }
 
         public CoachResult(string[] labels, Tensor output)
         {
+            Debug.LogWarning(output);
             Results = new List<LabelProbability>();
 
             for (var i = 0; i < labels.Length; i++)
@@ -201,7 +203,7 @@ namespace Coach
                     Confidence = probability
                 });
             }
-            SortedResults = Results.OrderByDescending(r => r.Confidence).ToList();
+            // SortedResults = Results.OrderByDescending(r => r.Confidence).ToList();
 
             output.Dispose();
         }
@@ -211,7 +213,7 @@ namespace Coach
         ///</summary>
         public LabelProbability Best()
         {
-            return SortedResults.FirstOrDefault();
+            return Results.FirstOrDefault();
         }
 
         ///<summary>
@@ -219,7 +221,7 @@ namespace Coach
         ///</summary>
         public LabelProbability Worst()
         {
-            return SortedResults.LastOrDefault();
+            return Results.LastOrDefault();
         }
     }
 
@@ -334,10 +336,20 @@ namespace Coach
     }
 
     [Serializable]
+    public class StatusDef
+    {
+        [FormerlySerializedAs("short")]
+        public string _short;
+
+        [FormerlySerializedAs("long")]
+        public string _long;
+    }
+
+    [Serializable]
     public class ModelDef
     {
         public string name;
-        public string status;
+        public StatusDef status;
         public int version;
         public string module;
         public string[] labels;
@@ -356,9 +368,7 @@ namespace Coach
     [Serializable]
     public class Profile
     {
-        public string id;
         public string bucket;
-
         public ModelDef[] models;
 
         public static Profile FromJson(string jsonString)
@@ -421,7 +431,7 @@ namespace Coach
         private async Task<Profile> GetProfile()
         {
             var id = this.ApiKey.Substring(0, 5);
-            var url = $"https://2hhn1oxz51.execute-api.us-east-1.amazonaws.com/prod/{id}";
+            var url = $"https://x27xyu10z1.execute-api.us-east-1.amazonaws.com/latest/profile?id={id}";
 
             var responseBody = await Networking.GetTextAsync(url, ApiKey);
 

@@ -19,7 +19,9 @@ public class WebcamController : MonoBehaviour
         webcamTexture.Play();
 
         var coach = await new CoachClient().Login("A2botdrxAn68aZh8Twwwt2sPBJdCfH3zO02QDMt0");
-        model = await coach.GetModelRemote("flowers");
+        model = await coach.GetModelRemote("small-flowers");
+        //model = coach.GetModel(System.IO.Path.Combine(Application.persistentDataPath, "flowers"));
+        //model = coach.GetModel(System.IO.Path.Combine(Application.persistentDataPath, "mobilenet"));
     }
 
     Texture2D GetTexture()
@@ -36,14 +38,22 @@ public class WebcamController : MonoBehaviour
         // Wait until our model is loaded
         if (model != null)
         {
-            var prediction = model.Predict(GetTexture()).Best();
+            var prediction = model.Predict(GetTexture(), inputName: "input_1", outputName: "out_relu/Relu6").Results;
+            //var prediction = model.Predict(GetTexture(), inputName: "input", outputName: "output").Results;
+            foreach (var p in prediction)
+            {
+                Debug.Log($"{p.Label}: {p.Confidence}");
+            }
+            Debug.Log("-----------");
 
-            var result = $"{prediction.Label}: {prediction.Confidence}";
+            var best = prediction[0];
+
+            var result = $"{best.Label}: {best.Confidence}";
             label.text = result;
         }
     }
 
-    private void OnDestroy()
+    void OnDestroy()
     {
         model.CleanUp();
     }
