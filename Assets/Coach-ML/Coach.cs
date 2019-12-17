@@ -174,36 +174,35 @@ namespace Coach
             return image.ToTensor(dims);
         }
     }
-
+    
     public class CoachResult
     {
         ///<summary>
         //Unsorted prediction results
         ///</summary>
-        public List<LabelProbability> Results { get; private set; }
-        
+        public LabelProbability[] Results { get; private set; }
+
         ///<summary>
         //Sorted prediction results, descending in Confidence
         ///</summary>
-        // public List<LabelProbability> SortedResults { get; private set; }
+        public LabelProbability[] SortedResults { get; private set; }
 
         public CoachResult(string[] labels, Tensor output)
         {
-            Debug.LogWarning(output);
-            Results = new List<LabelProbability>();
+            Results = new LabelProbability[labels.Length];
 
             for (var i = 0; i < labels.Length; i++)
             {
                 string label = labels[i];
                 float probability = output[i];
 
-                Results.Add(new LabelProbability()
+                Results[i] = new LabelProbability()
                 {
                     Label = label,
                     Confidence = probability
-                });
+                };
             }
-            // SortedResults = Results.OrderByDescending(r => r.Confidence).ToList();
+            SortedResults = Results.OrderByDescending(r => r.Confidence).ToArray();
 
             output.Dispose();
         }
@@ -213,7 +212,7 @@ namespace Coach
         ///</summary>
         public LabelProbability Best()
         {
-            return Results.FirstOrDefault();
+            return SortedResults.FirstOrDefault();
         }
 
         ///<summary>
@@ -221,7 +220,19 @@ namespace Coach
         ///</summary>
         public LabelProbability Worst()
         {
-            return Results.LastOrDefault();
+            return SortedResults.LastOrDefault();
+        }
+    }
+
+    public struct CumulativeConfidenceResult
+    {
+        public float Threshhold;
+        public CoachResult LastResult;
+        public float CumulativeConfidence;
+
+        public bool IsPassedThreshold()
+        {
+            return CumulativeConfidence >= Threshhold;
         }
     }
 
@@ -314,6 +325,18 @@ namespace Coach
             return GetModelResult(imageTensor, inputName, outputName);
         }
 
+        public void CumulativeConfidence(Texture2D image, float threshhold, ref CumulativeConfidenceResult result)
+        {
+            var prediction = Predict(image);
+            result.LastResult = prediction;
+            result.Threshhold = threshhold;
+
+            if (result.LastResult.Best().Label != prediction.Best().Label)
+                result.CumulativeConfidence = 0;
+            else if (result.CumulativeConfidence <= threshhold)
+                result.CumulativeConfidence += prediction.Best().Confidence;
+        }
+
         private CoachResult GetModelResult(Tensor imageTensor, string inputName = "input", string outputName = "output")
         {
             var inputs = new Dictionary<string, Tensor>();
@@ -338,10 +361,7 @@ namespace Coach
     [Serializable]
     public class StatusDef
     {
-        [FormerlySerializedAs("short")]
         public string _short;
-
-        [FormerlySerializedAs("long")]
         public string _long;
     }
 
@@ -349,7 +369,7 @@ namespace Coach
     public class ModelDef
     {
         public string name;
-        public StatusDef status;
+        // public StatusDef status;
         public int version;
         public string module;
         public string[] labels;
@@ -456,7 +476,10 @@ namespace Coach
             if (!IsAuthenticated())
                 throw new Exception("User is not authenticated");
 
-            ModelDef model = this.Profile.models.Single(m => m.name == modelName);
+            ModelDef model = this.Profile.models.SingleOrDefault(m => m.name == modelName);
+            if (model == null)
+                throw new Exception($"{modelName} is an invalid model");
+
             int version = model.version;
 
             string modelDir = Path.Combine(path, modelName);
@@ -494,11 +517,13 @@ namespace Coach
             if (modelType == ModelType.Frozen)
             {
                 modelFile = "frozen.pb";
-            } else if (modelType == ModelType.Unity)
+            }
+            else if (modelType == ModelType.Unity)
             {
                 modelFile = "unity.bytes";
 
-            } else if (modelType == ModelType.Mobile)
+            }
+            else if (modelType == ModelType.Mobile)
             {
                 modelFile = "mobile.tflite";
             }
@@ -506,7 +531,7 @@ namespace Coach
             var modelUrl = $"{baseUrl}/{modelFile}";
 
             byte[] modelBytes = await Networking.GetContentAsync(modelUrl, ApiKey);
-            
+
             var writePath = Path.Combine(path, modelName, modelFile);
             File.WriteAllBytes(writePath, modelBytes);
         }

@@ -6,7 +6,7 @@ The Unity SDK interacts with the Coach web API in order to download and parse yo
 
 ## Installation
 
-See the [Releases](https://github.com/lkuich/coach-unity/releases) page for a `.unitypackage`
+See the [Releases](https://github.com/lkuich/coach-unity/releases) page for the latest `.unitypackage`
 
 ## Usage
 
@@ -42,7 +42,8 @@ var prediction = await coach.GetModelRemote("flowers").Predict(image).Best();
 
 When finished with the model, run the `CleanUp` to free up resources:
 ```csharp
-void Destroy() {
+void Destroy()
+{
     Model.CleanUp();
 }
 ```
@@ -60,6 +61,7 @@ public class CoachController : MonoBehaviour
 {
     public RawImage Image;
     private CoachModel Model { get; set; }
+
     public void TakePhoto()
     {
         var results = Model.Predict(Image.texture as Texture2D);
@@ -70,14 +72,12 @@ public class CoachController : MonoBehaviour
     // Start is called before the first frame update
     async void Start()
     {
-        var coach = await new CoachClient().Login("");
-        await coach.CacheModel("flowers");
-
-        // var coach = new CoachClient();
-        Model = coach.GetModel("flowers");
+        var coach = await new CoachClient().Login("myapikey");
+        Model = await coach.CacheModelRemote("flowers");
     }
 
-    void Destroy() {
+    void Destroy()
+    {
         Model.CleanUp();
     }
 }
@@ -94,13 +94,13 @@ Optional `isDebug`, if `true`, additional logs will be displayed.
 Authenticates with Coach service and allows for model caching. Accepts API Key as its only parameter. Returns its instance of `CoachClient`.
 
 `async Task CacheModel(string name, string path=".")`  
-Downloads model from Coach service to disk. Default path is `Application.streamingAssetsPath`. Specify the name of the model, and the path to store it. This will create a new directory in the specified path and store any model related documents there. By default it will skip the download if the local version of the model matches the remote.
+Downloads model from Coach service to disk. Default path is `Application.persistentDataPath`. Specify the name of the model, and the path to store it. This will create a new directory in the specified path and store any model related documents there. By default it will skip the download if the local version of the model matches the remote.
 
 `CoachModel GetModel(string modelName, string path=".")`  
-Loads model into memory. Specify the name and path of the model. Default path is `Application.streamingAssetsPath`.
+Loads model into memory. Specify the name and path of the model. Default path is `Application.persistentDataPath`.
 
 `async Task<CoachModel> GetModelRemote(string name, string path=".")`  
-Downloads model from Coach service to disk, and loads it into memory. Default path is `Application.streamingAssetsPath`
+Downloads model from Coach service to disk, and loads it into memory. Default path is `Application.persistentDataPath`
 
 ### CoachModel
 `CoachModel(TFGraph graph, string[] labels, string module, float coachVersion)`  
