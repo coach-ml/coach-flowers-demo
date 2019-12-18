@@ -32,7 +32,8 @@ public class Webcam : MonoBehaviour
             {
                 aTime = 0;
 
-                model.CumulativeConfidence(GetPhoto(), 2000, ref results);
+                // Keep updating results
+                model.CumulativeConfidence(GetPhoto(), 5, ref results);
 
                 var best = results.LastResult.Best();
                 if (results.IsPassedThreshold())
