@@ -49,19 +49,6 @@ public class Webcam : MonoBehaviour
         }
     }
 
-    private string LastResult { get; set; }
-    private float CumulativeConfidence { get; set; }
-    private const float ConfidenceThreshold = 5;
-    void Predict()
-    {
-        var prediction = model.Predict(GetPhoto());
-        var best = prediction.Best();
-
-        var result = $"{best.Label}: {best.Confidence}";
-        label.text = result;
-    }
-
-
     public Texture2D GetPhoto()
     {
         Texture2D photo = new Texture2D(_webCamTexture.width, _webCamTexture.height);
