@@ -33,15 +33,17 @@ public class Webcam : MonoBehaviour
                 aTime = 0;
 
                 // Keep updating results
-                model.CumulativeConfidence(GetPhoto(), 5, ref results);
+                var photo = GetPhoto();
+                if (photo != null)
+                {
+                    model.CumulativeConfidence(photo, 5, ref results);
 
-                var best = results.LastResult.Best();
-                if (results.IsPassedThreshold())
-                {
-                    Debug.LogWarning("Passed the threshold");
-                    label.text = $"You found the {best.Label}";
-                } else
-                {
+                    var best = results.LastResult.Best();
+                    if (results.IsPassedThreshold())
+                    {
+                        Debug.LogWarning("Passed the threshold");
+                        //label.text = $"You found the {best.Label}";
+                    }
                     var result = $"{best.Label}: {best.Confidence}";
                     label.text = result;
                 }
@@ -51,11 +53,16 @@ public class Webcam : MonoBehaviour
 
     public Texture2D GetPhoto()
     {
-        Texture2D photo = new Texture2D(_webCamTexture.width, _webCamTexture.height);
-        photo.SetPixels(_webCamTexture.GetPixels());
-        photo.Apply();
+        if (_webCamTexture != null)
+        {
+            Texture2D photo = new Texture2D(_webCamTexture.width, _webCamTexture.height);
+            photo.SetPixels(_webCamTexture.GetPixels());
+            photo.Apply();
 
-        return photo;
+            return photo;
+        }
+
+        return null;
     }
 
     public void Stop()
@@ -75,7 +82,7 @@ public class Webcam : MonoBehaviour
             WebCamDevice[] devices = WebCamTexture.devices;
             if (devices.Length > 0)
             {
-                _webCamTexture = new WebCamTexture(devices[0].name, 720, 1280);
+                _webCamTexture = new WebCamTexture(devices[0].name);
                 _webCamTexture.Play();
 
                 yield return new WaitUntil(() => _webCamTexture.width > 10);

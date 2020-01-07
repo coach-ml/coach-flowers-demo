@@ -137,7 +137,6 @@ namespace Coach
         private static Tensor ToTensor(this Texture2D tex, ImageDims dims)
         {
             var pic = tex.GetPixels32();
-            UnityEngine.Object.DestroyImmediate(tex);
 
             int INPUT_SIZE = dims.InputSize;
             int IMAGE_MEAN = dims.ImageMean;
@@ -330,11 +329,15 @@ namespace Coach
 
         public void CumulativeConfidence(Texture2D image, float threshhold, ref CumulativeConfidenceResult result)
         {
+            string prevLabel = null;
+            if (result.LastResult != null)
+                prevLabel = result.LastResult.Best().Label;
             var prediction = Predict(image);
+
             result.LastResult = prediction;
             result.Threshhold = threshhold;
 
-            if (result.LastResult.Best().Label != prediction.Best().Label)
+            if (prevLabel != null && prevLabel != prediction.Best().Label)
                 result.CumulativeConfidence = 0;
             else if (result.CumulativeConfidence <= threshhold)
                 result.CumulativeConfidence += prediction.Best().Confidence;
