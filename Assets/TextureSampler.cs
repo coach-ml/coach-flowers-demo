@@ -58,7 +58,10 @@ public class TextureSampler : MonoBehaviour
         if (photo != null)
         {
             var prediction = model.Predict(photo);
-            label.text = prediction.Best().Label;
+            var best = prediction.Best();
+            label.text = best.Label;
+            Debug.Log("Guessing: " + best.Label + ": " + best.Confidence.ToString());
+            Debug.Log("———");
         }
     }
 
