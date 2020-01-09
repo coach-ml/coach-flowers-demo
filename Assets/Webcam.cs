@@ -12,20 +12,22 @@ public class Webcam : MonoBehaviour
 
     private WebCamTexture _webCamTexture { get; set; }
 
-    CumulativeConfidenceResult results; 
-
-    public async void Start()
+    CumulativeConfidenceResult results;
+    private bool running = false;
+    public async void StartWebcam()
     {
         StartCoroutine(SetupWebcam());
 
         var coach = await new CoachClient().Login("A2botdrxAn68aZh8Twwwt2sPBJdCfH3zO02QDMt0");
         model = await coach.GetModelRemote("small_flowers");
+
+        running = true;
     }
 
     private float aTime = 0;
     private void Update()
     {
-        if (model != null)
+        if (model != null && running)
         {
             aTime += Time.deltaTime;
             if (aTime >= 0.2f)
@@ -63,6 +65,17 @@ public class Webcam : MonoBehaviour
         }
 
         return null;
+    }
+
+    public void Toggle()
+    {
+        if (_webCamTexture.isPlaying)
+        {
+            _webCamTexture.Stop();
+        } else
+        {
+            _webCamTexture.Play();
+        }
     }
 
     public void Stop()
