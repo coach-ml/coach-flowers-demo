@@ -248,8 +248,8 @@ namespace Coach
     {
         private readonly float COACH_VERSION = 2f;
 
-        private string[] Labels { get; set; }
-        private ImageDims ImageDims { get; set; }
+        public string[] Labels { get; set; }
+        public ImageDims ImageDims { get; set; }
 
         private IWorker Worker { get; set; }
 

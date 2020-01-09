@@ -27,6 +27,8 @@ public class TextureSampler : MonoBehaviour
         var coach = await new CoachClient().Login("A2botdrxAn68aZh8Twwwt2sPBJdCfH3zO02QDMt0");
         model = await coach.GetModelRemote("small_flowers");
 
+        Debug.Log(model.Labels);
+
         this.daisy = Resources.Load<Texture2D>("Materials/daisy");
         this.rose = Resources.Load<Texture2D>("Materials/rose");
         this.sunflower = Resources.Load<Texture2D>("Materials/sunflower");
@@ -61,6 +63,12 @@ public class TextureSampler : MonoBehaviour
             var best = prediction.Best();
             label.text = best.Label;
             Debug.Log("Guessing: " + best.Label + ": " + best.Confidence.ToString());
+            string z = "";
+            foreach (var r in prediction.SortedResults)
+            {
+                z += r.Label + ": " + r.Confidence + ", ";
+            }
+            Debug.Log(z);
             Debug.Log("———");
         }
     }
