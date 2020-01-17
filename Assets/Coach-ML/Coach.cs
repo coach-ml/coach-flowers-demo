@@ -7,6 +7,7 @@ using UnityEngine;
 using Barracuda;
 using UnityEngine.Networking;
 using System.Net;
+using System.Collections;
 
 namespace Coach
 {
@@ -251,7 +252,11 @@ namespace Coach
         public string[] Labels { get; set; }
         public ImageDims ImageDims { get; set; }
 
-        private IWorker Worker { get; set; }
+        public IWorker Worker { get; set; }
+        
+        public string InputName { get; private set; }
+        public string OutputName { get; private set; }
+
 
         ///<summary>
         ///<param>Model graph</param>
@@ -259,22 +264,28 @@ namespace Coach
         ///<param>Base module used for training</param>
         ///<param>Model SDK version</param>
         ///</summary>
-        public CoachModel(Model model, string[] labels, string module, float coachVersion)
+        public CoachModel(Model model, string[] labels, string module, float coachVersion, string inputName = "input", string outputName = "output")
         {
             if (COACH_VERSION != coachVersion)
             {
                 throw new Exception($"Coach model v{coachVersion} incompatible with SDK version {COACH_VERSION}");
             }
 
-            Worker = BarracudaWorkerFactory.CreateWorker(BarracudaWorkerFactory.Type.Compute, model);
-
+            this.InputName = inputName;
+            this.OutputName = outputName;
             this.Labels = labels;
 
             int size = int.Parse(module.Substring(module.Length - 3, 3));
             this.ImageDims = new ImageDims(size, 0, 255);
+
+            Worker = WorkerFactory.CreateComputeWorker(model);
+            Worker.PrepareForInput(new Dictionary<string, TensorShape>()
+            {
+                { this.InputName, new TensorShape(1, ImageDims.InputSize, ImageDims.InputSize, 3) }
+            });
         }
 
-        private Tensor ReadTensorFromTexture(Texture2D texture)
+        public Tensor ReadTensorFromTexture(Texture2D texture)
         {
             return ImageUtil.TensorFromTexture(texture, this.ImageDims);
         }
@@ -291,16 +302,24 @@ namespace Coach
             return ImageUtil.TensorFromTexture(texture, this.ImageDims);
         }
 
+        /*
+        public IEnumerable<CoachResult> PredictAsync(Texture2D texture)
+        {
+            var imageTensor = ReadTensorFromTexture(texture);
+
+        }
+        */
+
         ///<summary>
         ///Parses the specified Texture2D as a Tensor and runs it through the loaded model
         ///<param>Path to the sample image</param>
         ///<param>Name of the input in the graph</param>
         ///<param>Name of the output in the graph</param>
         ///</summary>
-        public CoachResult Predict(Texture2D texture, string inputName = "input", string outputName = "output")
+        public CoachResult Predict(Texture2D texture)
         {
             var imageTensor = ReadTensorFromTexture(texture);
-            return GetModelResult(imageTensor, inputName, outputName);
+            return GetModelResult(imageTensor);
         }
 
         ///<summary>
@@ -309,10 +328,10 @@ namespace Coach
         ///<param>Name of the input in the graph</param>
         ///<param>Name of the output in the graph</param>
         ///</summary>
-        public CoachResult Predict(string image, string inputName = "input", string outputName = "output")
+        public CoachResult Predict(string image)
         {
             var imageTensor = ReadTensorFromFile(image);
-            return GetModelResult(imageTensor, inputName, outputName);
+            return GetModelResult(imageTensor);
         }
 
         ///<summary>
@@ -321,10 +340,10 @@ namespace Coach
         ///<param>Name of the input in the graph</param>
         ///<param>Name of the output in the graph</param>
         ///</summary>
-        public CoachResult Predict(byte[] image, string inputName = "input", string outputName = "output")
+        public CoachResult Predict(byte[] image)
         {
             var imageTensor = ReadTensorFromBytes(image);
-            return GetModelResult(imageTensor, inputName, outputName);
+            return GetModelResult(imageTensor);
         }
 
         public void CumulativeConfidence(Texture2D image, float threshhold, ref CumulativeConfidenceResult result)
@@ -343,19 +362,44 @@ namespace Coach
                 result.CumulativeConfidence += prediction.Best().Confidence;
         }
 
-        private CoachResult GetModelResult(Tensor imageTensor, string inputName = "input", string outputName = "output")
+        private CoachResult GetModelResult(Tensor imageTensor)
         {
-            var inputs = new Dictionary<string, Tensor>();
-            inputs.Add(inputName, imageTensor);
-
-            // Await execution
-            Worker.Execute(inputs);
+            Worker.Execute(imageTensor);
             imageTensor.Dispose();
 
             // Get the output
-            var output = Worker.Fetch(outputName);
-
+            var output = Worker.Fetch(this.OutputName);
             return new CoachResult(Labels, output);
+        }
+
+        public IEnumerator PredictAsync(Texture2D image)
+        {
+            //if (Worker.GetAsyncProgress() <= 0)
+            {
+                var imageTensor = ReadTensorFromTexture(image);
+                return GetModelResultAsync(imageTensor);
+            }
+
+            //return null;
+        }
+
+        public CoachResult GetPredictionResultAsync()
+        {
+            var progress = Worker.GetAsyncProgress();
+            Debug.Log(progress);
+
+            if (progress == 1f)
+            {
+                var output = Worker.Fetch(this.OutputName);
+                return new CoachResult(Labels, output);
+            }
+
+            return null;
+        }
+
+        private IEnumerator GetModelResultAsync(Tensor imageTensor)
+        {
+            return Worker.ExecuteAsync(imageTensor);
         }
 
         public void CleanUp()

@@ -22,33 +22,55 @@ public class Webcam : MonoBehaviour
         model = await coach.GetModelRemote("small_flowers");
 
         running = true;
+
+        StartCoroutine(model.PredictAsync(GetPhoto()));
     }
 
-    private float aTime = 0;
     private void Update()
     {
         if (model != null && running)
         {
-            aTime += Time.deltaTime;
-            if (aTime >= 0.2f)
+            var _results = model.GetPredictionResultAsync();
+            if (_results != null)
             {
-                aTime = 0;
+                var best = _results.Best();
 
-                // Keep updating results
-                var photo = GetPhoto();
-                if (photo != null)
+                var result = $"{best.Label}: {best.Confidence}";
+                label.text = result;
+            }
+        }
+        return;
+        if (model != null && running)
+        {
+            var photo = GetPhoto();
+            if (photo != null)
+            {
+                var routine = model.PredictAsync(photo);
+                if (routine != null)
                 {
-                    model.CumulativeConfidence(photo, 5, ref results);
-
-                    var best = results.LastResult.Best();
-                    if (results.IsPassedThreshold())
+                    StartCoroutine(routine);
+                    var results = model.GetPredictionResultAsync();
+                    if (results != null)
                     {
-                        Debug.LogWarning("Passed the threshold");
-                        //label.text = $"You found the {best.Label}";
+                        var best = results.Best();
+
+                        var result = $"{best.Label}: {best.Confidence}";
+                        label.text = result;
                     }
-                    var result = $"{best.Label}: {best.Confidence}";
-                    label.text = result;
                 }
+
+                /*
+                model.CumulativeConfidence(photo, 5, ref results);
+
+                var best = results.LastResult.Best();
+                if (results.IsPassedThreshold())
+                {
+                    Debug.LogWarning("Passed the threshold");
+                    //label.text = $"You found the {best.Label}";
+                }
+                var result = $"{best.Label}: {best.Confidence}";
+                label.text = result;
+                */
             }
         }
     }

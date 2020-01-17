@@ -1,6 +1,8 @@
 {
     "name": "MacBLAS",
-    "references": [],
+    "references": [
+		"Barracuda"
+    ],
     "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor",

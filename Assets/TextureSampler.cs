@@ -35,7 +35,7 @@ public class TextureSampler : MonoBehaviour
 
         label.enabled = true;
 
-        Debug.LogError(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
+        Debug.Log(UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
     }
 
     public void SetDaisy() { SetPhoto(FlowerType.Daisy); }
