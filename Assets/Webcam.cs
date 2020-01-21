@@ -14,19 +14,20 @@ public class Webcam : MonoBehaviour
 
     CumulativeConfidenceResult results;
     private bool running = false;
-    public async void StartWebcam()
+    public async void Start()
     {
         StartCoroutine(SetupWebcam());
-
+        /*
         var coach = await new CoachClient().Login("A2botdrxAn68aZh8Twwwt2sPBJdCfH3zO02QDMt0");
         model = await coach.GetModelRemote("small_flowers");
 
         running = true;
 
         StartCoroutine(model.PredictAsync(GetPhoto()));
+        */
     }
 
-    private void Update()
+    private void SUpdate()
     {
         if (model != null && running)
         {
@@ -166,7 +167,7 @@ public class Webcam : MonoBehaviour
     {
 #if UNITY_IOS
 		// iOS cam is mirrored
-        image.gameObject.transform.localScale = new Vector3(-1, 1, 1);
+        WebcamImage.gameObject.transform.localScale = new Vector3(-1, 1, 1);
 #endif
         WebcamImage.gameObject.transform.Rotate(0.0f, 0, -_webCamTexture.videoRotationAngle);
         return _webCamTexture.videoRotationAngle != 0;

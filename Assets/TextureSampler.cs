@@ -20,7 +20,7 @@ public class TextureSampler : MonoBehaviour
     private Texture2D daisy;
     private Texture2D sunflower;
 
-    async void Start()
+    async void FStart()
     {
         label.enabled = false;
 
