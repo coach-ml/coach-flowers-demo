@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using System.Linq;
 using System.Collections;
 using Coach;
+using Barracuda;
 
 public class DeviceCameraController : MonoBehaviour
 {
@@ -73,7 +74,25 @@ public class DeviceCameraController : MonoBehaviour
         // Download Coach model
         var coach = await new CoachClient().Login("A2botdrxAn68aZh8Twwwt2sPBJdCfH3zO02QDMt0");
         model = await coach.GetModelRemote("small_flowers");
+
+        // StartCoroutine(model.PredictAsync(GetWebcamPhoto()));
+        /*
+        Debug.Log("Spawning worker...");
+        var worker = model.SpawnWorker();
+        this.worker = worker;
+        */
+        /*
+        for (int i = 0; i < 2; i++)
+        {
+            var worker = model.SpawnWorker();
+            workers.Add(worker);
+        }
+        */
+        var worker = model.SpawnWorker();
+        workers.Enqueue(worker);
+        StartCoroutine(model.PredictAsync(worker, GetWebcamPhoto()));
     }
+    //public IWorker worker { get; set; }
 
     public Texture2D GetWebcamPhoto()
     {
@@ -92,7 +111,7 @@ public class DeviceCameraController : MonoBehaviour
     public void PredictRose() {
         var photo = Resources.Load<Texture2D>("Materials/rose");
 
-        var prediction = model.Predict(photo);
+        var prediction = model.Predict(model.SpawnWorker(), photo);
         var best = prediction.Best();
         predictionResult.text = best.Label;
         Debug.Log("Guessing: " + best.Label + ": " + best.Confidence.ToString());
@@ -107,16 +126,10 @@ public class DeviceCameraController : MonoBehaviour
     public void PredictWebcam() {
         var photo = GetWebcamPhoto();
 
-        var prediction = model.Predict(photo);
-        var best = prediction.Best();
-        predictionResult.text = best.Label;
-        Debug.Log("Guessing: " + best.Label + ": " + best.Confidence.ToString());
-        string z = "";
-        foreach (var r in prediction.SortedResults)
-        {
-            z += r.Label + ": " + r.Confidence + ", ";
-        }
-        Debug.Log(z);
+        // var prediction = model.Predict(photo);
+        StartCoroutine(
+            model.PredictAsync(model.SpawnWorker(), photo)
+        );
     }
 
     public void Play()
@@ -162,6 +175,8 @@ public class DeviceCameraController : MonoBehaviour
 
     // Make adjustments to image every frame to be safe, since Unity isn't 
     // guaranteed to report correct data as soon as device camera is started
+    System.Collections.Generic.Queue<IWorker> workers = new System.Collections.Generic.Queue<IWorker>();
+    float aTime = 0;
     void Update()
     {
         // Skip making adjustment for incorrect camera data
@@ -190,7 +205,78 @@ public class DeviceCameraController : MonoBehaviour
             activeCameraDevice.isFrontFacing ? fixedScale : defaultScale;
 
         if (model != null) {
-            // Do something maybe
+            /*
+            var best = model.Predict(GetWebcamPhoto()).Best();
+            var r = best.Label + ": " + best.Confidence; ;
+            Debug.Log("We got a: " + r);
+            predictionResult.text = r;
+            */
+
+            // Debug.LogWarning(workers.Count());
+
+            float topProgress = 0f;
+            if (workers.Count() > 0)
+                topProgress = workers.Peek().GetAsyncProgress();
+            //Debug.Log(topProgress);
+            int maxWorkers = 4;
+            aTime += Time.deltaTime;
+            if (aTime >= 0.2f)
+            {
+                aTime = 0;
+
+                // If the last worker is partway done, queue another one, only have x workers at a time
+                if (workers.Count() <= maxWorkers)
+                {
+                    Debug.LogWarning("Queuing new worker: " + workers.Count());
+                    var worker = model.SpawnWorker();
+                    workers.Enqueue(worker);
+                    StartCoroutine(model.PredictAsync(worker, GetWebcamPhoto()));
+                }
+            }
+            if (topProgress == 1 && workers.Count() > 0)
+            {
+                var worker = workers.Dequeue();
+
+                var result = model.GetPredictionResultAsync(worker);
+                // Debug.Log("We are trying for a result: " + worker.GetAsyncProgress());
+                if (result != null)
+                {
+                    var best = result.Best();
+
+                    Debug.Log("We have a result: " + worker.Summary() + " | " + best.Label + ": " + best.Confidence);
+                    predictionResult.text = best.Label + ": " + best.Confidence;
+
+                    worker.Dispose();
+                    StartCoroutine(model.PredictAsync(worker, GetWebcamPhoto()));
+                }
+            }
+
+            /* Fast coroutine
+            var prediction = model.PredictAsync(GetWebcamPhoto());
+            while (prediction.MoveNext())
+            {
+                var result = model.GetPredictionResultAsync();
+                if (result != null)
+                {
+                    var best = result.Best();
+                    var r = best.Label + ": " + best.Confidence; ;
+                    Debug.Log("We got a: " + r);
+                    predictionResult.text = r;
+                }
+            }
+            */
+
+            /*
+            StartCoroutine(model.PredictAsync(GetWebcamPhoto()));
+            var result = model.GetPredictionResultAsync();
+            if (result != null)
+            {
+                var best = result.Best();
+                var r = best.Label + ": " + best.Confidence; ;
+                Debug.Log("We got a: " + r);
+                predictionResult.text = r;
+            }
+            */
         }
     }
 }

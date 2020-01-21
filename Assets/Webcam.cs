@@ -12,93 +12,50 @@ public class Webcam : MonoBehaviour
 
     private WebCamTexture _webCamTexture { get; set; }
 
-    CumulativeConfidenceResult results;
-    private bool running = false;
+    CumulativeConfidenceResult results; 
+
     public async void Start()
     {
         StartCoroutine(SetupWebcam());
-        /*
+
         var coach = await new CoachClient().Login("A2botdrxAn68aZh8Twwwt2sPBJdCfH3zO02QDMt0");
         model = await coach.GetModelRemote("small_flowers");
-
-        running = true;
-
-        StartCoroutine(model.PredictAsync(GetPhoto()));
-        */
     }
 
-    private void SUpdate()
+    private float aTime = 0;
+    private void Update()
     {
-        if (model != null && running)
+        if (model != null)
         {
-            var _results = model.GetPredictionResultAsync();
-            if (_results != null)
+            aTime += Time.deltaTime;
+            if (aTime >= 0.2f)
             {
-                var best = _results.Best();
+                aTime = 0;
 
-                var result = $"{best.Label}: {best.Confidence}";
-                label.text = result;
-            }
-        }
-        return;
-        if (model != null && running)
-        {
-            var photo = GetPhoto();
-            if (photo != null)
-            {
-                var routine = model.PredictAsync(photo);
-                if (routine != null)
-                {
-                    StartCoroutine(routine);
-                    var results = model.GetPredictionResultAsync();
-                    if (results != null)
-                    {
-                        var best = results.Best();
-
-                        var result = $"{best.Label}: {best.Confidence}";
-                        label.text = result;
-                    }
-                }
-
-                /*
-                model.CumulativeConfidence(photo, 5, ref results);
+                // Keep updating results
+                // model.CumulativeConfidence(GetPhoto(), 5, ref results);
 
                 var best = results.LastResult.Best();
                 if (results.IsPassedThreshold())
                 {
                     Debug.LogWarning("Passed the threshold");
-                    //label.text = $"You found the {best.Label}";
+                    label.text = $"You found the {best.Label}";
+                } else
+                {
+                    var result = $"{best.Label}: {best.Confidence}";
+                    label.text = result;
                 }
-                var result = $"{best.Label}: {best.Confidence}";
-                label.text = result;
-                */
             }
         }
     }
 
     public Texture2D GetPhoto()
     {
-        if (_webCamTexture != null)
-        {
-            Texture2D photo = new Texture2D(_webCamTexture.width, _webCamTexture.height);
-            photo.SetPixels(_webCamTexture.GetPixels());
-            photo.Apply();
+        Texture2D photo = new Texture2D(_webCamTexture.width, _webCamTexture.height);
+        photo.SetPixels(_webCamTexture.GetPixels());
+        photo.Apply();
 
-            return photo;
-        }
-
-        return null;
-    }
-
-    public void Toggle()
-    {
-        if (_webCamTexture.isPlaying)
-        {
-            _webCamTexture.Stop();
-        } else
-        {
-            _webCamTexture.Play();
-        }
+        return photo;
     }
 
     public void Stop()
@@ -118,7 +75,7 @@ public class Webcam : MonoBehaviour
             WebCamDevice[] devices = WebCamTexture.devices;
             if (devices.Length > 0)
             {
-                _webCamTexture = new WebCamTexture(devices[0].name);
+                _webCamTexture = new WebCamTexture(devices[0].name, 720, 1280);
                 _webCamTexture.Play();
 
                 yield return new WaitUntil(() => _webCamTexture.width > 10);
@@ -167,7 +124,7 @@ public class Webcam : MonoBehaviour
     {
 #if UNITY_IOS
 		// iOS cam is mirrored
-        WebcamImage.gameObject.transform.localScale = new Vector3(-1, 1, 1);
+        image.gameObject.transform.localScale = new Vector3(-1, 1, 1);
 #endif
         WebcamImage.gameObject.transform.Rotate(0.0f, 0, -_webCamTexture.videoRotationAngle);
         return _webCamTexture.videoRotationAngle != 0;

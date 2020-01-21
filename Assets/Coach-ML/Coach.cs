@@ -141,8 +141,8 @@ namespace Coach
 
             int INPUT_SIZE = dims.InputSize;
             int IMAGE_MEAN = dims.ImageMean;
-            float IMAGE_STD = dims.InputSize;
-
+            float IMAGE_STD = dims.ImageStd;
+            
             float[] floatValues = new float[(INPUT_SIZE * INPUT_SIZE) * 3];
 
             for (int i = 0; i < pic.Length; i++)
@@ -245,6 +245,47 @@ namespace Coach
         public float Confidence { get; set; }
     }
 
+    /*public class CoachQueue
+    {
+        private CoachModel model { get; set; }
+
+        public Queue<CoachResult> ResultQueue;
+        public Queue<Tensor> TensorQueue;
+
+        public delegate void TensorEvent();
+        public event TensorEvent newTensor;
+
+        public event TensorEvent workerProgress;
+
+        public CoachQueue(CoachModel model)
+        {
+            this.model = model;
+
+            ResultQueue = new Queue<CoachResult>();
+            TensorQueue = new Queue<Tensor>();
+        }
+
+        public void EnqueueTensor(Tensor tensor)
+        {
+            TensorQueue.Enqueue(tensor);
+            newTensor();
+        }
+
+        public IEnumerator DequeueTensor()
+        {
+            var tensor = TensorQueue.Dequeue();
+            return model.GetModelResultAsync(tensor);
+        }
+
+        public IEnumerator ProcessQueue()
+        {
+            if (model.GetProgress() == 0)
+            {
+                return DequeueTensor();
+            }
+        }
+    }*/
+
     public class CoachModel
     {
         private readonly float COACH_VERSION = 2f;
@@ -252,10 +293,12 @@ namespace Coach
         public string[] Labels { get; set; }
         public ImageDims ImageDims { get; set; }
 
-        public IWorker Worker { get; set; }
-        
+        //public IWorker Worker { get; set; }
+
         public string InputName { get; private set; }
         public string OutputName { get; private set; }
+
+        private Model Model { get; set; }
 
 
         ///<summary>
@@ -277,12 +320,17 @@ namespace Coach
 
             int size = int.Parse(module.Substring(module.Length - 3, 3));
             this.ImageDims = new ImageDims(size, 0, 255);
+            this.Model = model;
+        }
 
-            Worker = WorkerFactory.CreateComputeWorker(model);
-            Worker.PrepareForInput(new Dictionary<string, TensorShape>()
+        public IWorker SpawnWorker()
+        {
+            var worker = WorkerFactory.CreateComputeWorker(this.Model);
+            worker.PrepareForInput(new Dictionary<string, TensorShape>()
             {
                 { this.InputName, new TensorShape(1, ImageDims.InputSize, ImageDims.InputSize, 3) }
             });
+            return worker;
         }
 
         public Tensor ReadTensorFromTexture(Texture2D texture)
@@ -302,24 +350,16 @@ namespace Coach
             return ImageUtil.TensorFromTexture(texture, this.ImageDims);
         }
 
-        /*
-        public IEnumerable<CoachResult> PredictAsync(Texture2D texture)
-        {
-            var imageTensor = ReadTensorFromTexture(texture);
-
-        }
-        */
-
         ///<summary>
         ///Parses the specified Texture2D as a Tensor and runs it through the loaded model
         ///<param>Path to the sample image</param>
         ///<param>Name of the input in the graph</param>
         ///<param>Name of the output in the graph</param>
         ///</summary>
-        public CoachResult Predict(Texture2D texture)
+        public CoachResult Predict(IWorker worker, Texture2D texture)
         {
             var imageTensor = ReadTensorFromTexture(texture);
-            return GetModelResult(imageTensor);
+            return GetModelResult(worker, imageTensor);
         }
 
         ///<summary>
@@ -328,10 +368,10 @@ namespace Coach
         ///<param>Name of the input in the graph</param>
         ///<param>Name of the output in the graph</param>
         ///</summary>
-        public CoachResult Predict(string image)
+        public CoachResult Predict(IWorker worker, string image)
         {
             var imageTensor = ReadTensorFromFile(image);
-            return GetModelResult(imageTensor);
+            return GetModelResult(worker,imageTensor);
         }
 
         ///<summary>
@@ -340,13 +380,13 @@ namespace Coach
         ///<param>Name of the input in the graph</param>
         ///<param>Name of the output in the graph</param>
         ///</summary>
-        public CoachResult Predict(byte[] image)
+        public CoachResult Predict(IWorker worker, byte[] image)
         {
             var imageTensor = ReadTensorFromBytes(image);
-            return GetModelResult(imageTensor);
+            return GetModelResult(worker, imageTensor);
         }
 
-        public void CumulativeConfidence(Texture2D image, float threshhold, ref CumulativeConfidenceResult result)
+        /*public void CumulativeConfidence(Texture2D image, float threshhold, ref CumulativeConfidenceResult result)
         {
             string prevLabel = null;
             if (result.LastResult != null)
@@ -360,52 +400,59 @@ namespace Coach
                 result.CumulativeConfidence = 0;
             else if (result.CumulativeConfidence <= threshhold)
                 result.CumulativeConfidence += prediction.Best().Confidence;
-        }
+        }*/
 
-        private CoachResult GetModelResult(Tensor imageTensor)
+        private CoachResult GetModelResult(IWorker worker, Tensor imageTensor)
         {
-            Worker.Execute(imageTensor);
+            worker.Execute(imageTensor);
             imageTensor.Dispose();
 
             // Get the output
-            var output = Worker.Fetch(this.OutputName);
+            var output = worker.PeekOutput(this.OutputName);
             return new CoachResult(Labels, output);
         }
 
-        public IEnumerator PredictAsync(Texture2D image)
-        {
-            //if (Worker.GetAsyncProgress() <= 0)
-            {
-                var imageTensor = ReadTensorFromTexture(image);
-                return GetModelResultAsync(imageTensor);
-            }
+        // public CoachQueue queue;
 
-            //return null;
+        public IEnumerator PredictAsync(IWorker worker, Texture2D image)
+        {
+            var imageTensor = ReadTensorFromTexture(image);
+            //queue.EnqueueTensor(imageTensor);
+            return GetModelResultAsync(worker, imageTensor);
         }
 
-        public CoachResult GetPredictionResultAsync()
-        {
-            var progress = Worker.GetAsyncProgress();
-            Debug.Log(progress);
+        public float GetProgress(IWorker worker) {
+            return worker.GetAsyncProgress();
+        }
 
+        public CoachResult GetPredictionResultAsync(IWorker worker)
+        {
+            var progress = worker.GetAsyncProgress();
             if (progress == 1f)
             {
-                var output = Worker.Fetch(this.OutputName);
+                var output = worker.PeekOutput(this.OutputName);
                 return new CoachResult(Labels, output);
             }
 
             return null;
         }
 
-        private IEnumerator GetModelResultAsync(Tensor imageTensor)
+        public IEnumerator GetModelResultAsync(IWorker worker, Tensor imageTensor)
         {
-            return Worker.ExecuteAsync(imageTensor);
+            return worker.ExecuteAsync(imageTensor);
         }
 
-        public void CleanUp()
+        /*public void CleanUp()
         {
             Worker.Dispose();
-        }
+        }*/
+    }
+
+    public class CoachBehaviour : MonoBehaviour
+    {
+        public CoachModel model;
+
+
     }
 
     [Serializable]
