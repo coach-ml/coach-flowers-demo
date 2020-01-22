@@ -75,24 +75,12 @@ public class DeviceCameraController : MonoBehaviour
         var coach = await new CoachClient().Login("A2botdrxAn68aZh8Twwwt2sPBJdCfH3zO02QDMt0");
         model = await coach.GetModelRemote("small_flowers");
 
-        // StartCoroutine(model.PredictAsync(GetWebcamPhoto()));
-        /*
-        Debug.Log("Spawning worker...");
-        var worker = model.SpawnWorker();
-        this.worker = worker;
-        */
-        /*
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 3; i++)
         {
             var worker = model.SpawnWorker();
             workers.Add(worker);
         }
-        */
-        var worker = model.SpawnWorker();
-        workers.Enqueue(worker);
-        StartCoroutine(model.PredictAsync(worker, GetWebcamPhoto()));
     }
-    //public IWorker worker { get; set; }
 
     public Texture2D GetWebcamPhoto()
     {
@@ -175,7 +163,9 @@ public class DeviceCameraController : MonoBehaviour
 
     // Make adjustments to image every frame to be safe, since Unity isn't 
     // guaranteed to report correct data as soon as device camera is started
-    System.Collections.Generic.Queue<IWorker> workers = new System.Collections.Generic.Queue<IWorker>();
+
+    System.Collections.Generic.List<IWorker> workers = new System.Collections.Generic.List<IWorker>();
+    //System.Collections.Generic.Queue<IWorker> workers = new System.Collections.Generic.Queue<IWorker>();
     float aTime = 0;
     void Update()
     {
@@ -205,78 +195,29 @@ public class DeviceCameraController : MonoBehaviour
             activeCameraDevice.isFrontFacing ? fixedScale : defaultScale;
 
         if (model != null) {
-            /*
-            var best = model.Predict(GetWebcamPhoto()).Best();
-            var r = best.Label + ": " + best.Confidence; ;
-            Debug.Log("We got a: " + r);
-            predictionResult.text = r;
-            */
-
-            // Debug.LogWarning(workers.Count());
-
-            float topProgress = 0f;
-            if (workers.Count() > 0)
-                topProgress = workers.Peek().GetAsyncProgress();
-            //Debug.Log(topProgress);
-            int maxWorkers = 4;
             aTime += Time.deltaTime;
-            if (aTime >= 0.2f)
-            {
-                aTime = 0;
 
-                // If the last worker is partway done, queue another one, only have x workers at a time
-                if (workers.Count() <= maxWorkers)
+            foreach (var _worker in workers)
+            {
+                var progress = _worker.GetAsyncProgress();
+                if (progress == 1)
                 {
-                    Debug.LogWarning("Queuing new worker: " + workers.Count());
-                    var worker = model.SpawnWorker();
-                    workers.Enqueue(worker);
-                    StartCoroutine(model.PredictAsync(worker, GetWebcamPhoto()));
+                    var result = model.GetPredictionResultAsync(_worker);
+                    if (result != null)
+                    {
+                        var best = result.Best();
+
+                        Debug.Log("We have a result: " + _worker.Summary() + " | " + best.Label + ": " + best.Confidence);
+                        predictionResult.text = best.Label + ": " + best.Confidence;
+
+                        StartCoroutine(model.PredictAsync(_worker, GetWebcamPhoto()));
+                    }
+                } else if (progress == 0 && aTime >= 0.2f) // Ntasha, try adjusting this per performance results
+                {
+                    aTime = 0;
+                    StartCoroutine(model.PredictAsync(_worker, GetWebcamPhoto()));
                 }
             }
-            if (topProgress == 1 && workers.Count() > 0)
-            {
-                var worker = workers.Dequeue();
-
-                var result = model.GetPredictionResultAsync(worker);
-                // Debug.Log("We are trying for a result: " + worker.GetAsyncProgress());
-                if (result != null)
-                {
-                    var best = result.Best();
-
-                    Debug.Log("We have a result: " + worker.Summary() + " | " + best.Label + ": " + best.Confidence);
-                    predictionResult.text = best.Label + ": " + best.Confidence;
-
-                    worker.Dispose();
-                    StartCoroutine(model.PredictAsync(worker, GetWebcamPhoto()));
-                }
-            }
-
-            /* Fast coroutine
-            var prediction = model.PredictAsync(GetWebcamPhoto());
-            while (prediction.MoveNext())
-            {
-                var result = model.GetPredictionResultAsync();
-                if (result != null)
-                {
-                    var best = result.Best();
-                    var r = best.Label + ": " + best.Confidence; ;
-                    Debug.Log("We got a: " + r);
-                    predictionResult.text = r;
-                }
-            }
-            */
-
-            /*
-            StartCoroutine(model.PredictAsync(GetWebcamPhoto()));
-            var result = model.GetPredictionResultAsync();
-            if (result != null)
-            {
-                var best = result.Best();
-                var r = best.Label + ": " + best.Confidence; ;
-                Debug.Log("We got a: " + r);
-                predictionResult.text = r;
-            }
-            */
         }
     }
 }
