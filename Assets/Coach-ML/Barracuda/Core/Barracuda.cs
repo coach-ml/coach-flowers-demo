@@ -74,6 +74,10 @@ public interface IWorker : IDisposable
     /// Progress of the scheduling, 0.0 = 0%, 1.0 = 100%
     /// </summary>
     float GetAsyncProgress();
+    /// <summary>
+    /// Resets progress to 0.0
+    /// </summary>
+    void ResetAsyncProgress();
     #endregion
 
     #region Outputs
