@@ -375,26 +375,22 @@ namespace Coach
                 result.CumulativeConfidence += prediction.Best().Confidence;
         }
 
-        public void CumulativeConfidenceAsync(float threshhold, ref CumulativeConfidenceResult? nullableResult)
+        public void CumulativeConfidenceAsync(float threshhold, ref CumulativeConfidenceResult result)
         {
             string prevLabel = null;
-            if (nullableResult != null)
+            if (result.LastResult != null)
+                prevLabel = result.LastResult.Best().Label;
+
+            var prediction = GetPredictionResultAsync();
+            if (prediction != null)
             {
-                var result = nullableResult.Value;
-                if (result.LastResult != null)
-                    prevLabel = result.LastResult.Best().Label;
+                result.LastResult = prediction;
+                result.Threshhold = threshhold;
 
-                var prediction = GetPredictionResultAsync();
-                if (prediction != null)
-                {
-                    result.LastResult = prediction;
-                    result.Threshhold = threshhold;
-
-                    if (prevLabel != null && prevLabel != prediction.Best().Label)
-                        result.CumulativeConfidence = 0;
-                    else if (result.CumulativeConfidence <= threshhold)
-                        result.CumulativeConfidence += prediction.Best().Confidence;
-                }
+                if (prevLabel != null && prevLabel != prediction.Best().Label)
+                    result.CumulativeConfidence = 0;
+                else if (result.CumulativeConfidence <= threshhold)
+                    result.CumulativeConfidence += prediction.Best().Confidence;
             }
         }
 

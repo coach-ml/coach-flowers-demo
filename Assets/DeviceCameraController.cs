@@ -165,7 +165,7 @@ public class DeviceCameraController : MonoBehaviour
     // Make adjustments to image every frame to be safe, since Unity isn't 
     // guaranteed to report correct data as soon as device camera is started
 
-    CumulativeConfidenceResult? results;
+    CumulativeConfidenceResult results;
     float aTime = 0;
     void Update()
     {
@@ -203,22 +203,20 @@ public class DeviceCameraController : MonoBehaviour
                 StartCoroutine(model.PredictAsync(GetWebcamPhoto()));
             }
 
-            /*
             model.CumulativeConfidenceAsync(5f, ref results);
-            if (results != null) {
-                var best = results.Value.LastResult.Best();
-                if (results.Value.IsPassedThreshold())
+            if (results.LastResult != null) {
+                var best = results.LastResult.Best();
+                if (results.IsPassedThreshold())
                 {
                     Debug.LogWarning("Passed the threshold");
 
                     var result = $"{best.Label}: {best.Confidence}";
                     predictionResult.text = result;
                 }
-                Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
+                // Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
             }
-            */
 
-            // Always check for results
+            /* Always check for results
             var modelResult = model.GetPredictionResultAsync();
             if (modelResult != null)
             {
@@ -226,7 +224,7 @@ public class DeviceCameraController : MonoBehaviour
 
                 Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
                 predictionResult.text = best.Label + ": " + best.Confidence;
-            }
+            }*/
         }
     }
 
