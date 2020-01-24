@@ -2,6 +2,8 @@
 using UnityEngine.UI;
 using System.Linq;
 using Coach;
+using Barracuda;
+using System.Collections.Generic;
 
 public class DeviceCameraController : MonoBehaviour
 {
@@ -197,13 +199,13 @@ public class DeviceCameraController : MonoBehaviour
         if (model != null) {
             // Every once in a while when the workers aren't busy
             aTime += Time.deltaTime;
-            if (aTime >= 0.5f && !model.AllWorkersBusy())
+            if (aTime >= 0.5f && model.WorkerAvailable())
             {
                 aTime = 0;
                 StartCoroutine(model.PredictAsync(GetWebcamPhoto()));
             }
 
-            model.CumulativeConfidenceAsync(5f, ref results);
+            /*model.CumulativeConfidenceAsync(5f, ref results);
             if (results.LastResult != null) {
                 var best = results.LastResult.Best();
                 if (results.IsPassedThreshold())
@@ -214,22 +216,22 @@ public class DeviceCameraController : MonoBehaviour
                     predictionResult.text = result;
                 }
                 // Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
-            }
+            }*/
 
-            /* Always check for results
-            var modelResult = model.GetPredictionResultAsync();
+            // Always check for results
+            var modelResult = model.GetPredictionResultAsync(true);
             if (modelResult != null)
             {
                 var best = modelResult.Best();
 
                 Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
                 predictionResult.text = best.Label + ": " + best.Confidence;
-            }*/
+            }
         }
     }
 
     private void OnDestroy()
     {
-        model.CleanUp();
+        // model.CleanUp();
     }
 }
