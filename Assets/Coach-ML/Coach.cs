@@ -550,13 +550,14 @@ namespace Coach
         /// </summary>
         /// <param name="threshhold">Score to consider</param>
         /// <param name="result">The output CumulativeConfidenceResult to update</param>
-        public void CumulativeConfidenceAsync(float threshhold, ref CumulativeConfidenceResult result)
+        /// <param name="destroyTexture">Optional flag to destroy Texture2D once prediction is finished</param>
+        public void CumulativeConfidenceAsync(float threshhold, ref CumulativeConfidenceResult result, bool destroyTexture = false)
         {
             string prevLabel = null;
             if (result.LastResult != null)
                 prevLabel = result.LastResult.Best().Label;
 
-            var prediction = GetPredictionResultAsync();
+            var prediction = GetPredictionResultAsync(destroyTexture);
             if (prediction != null)
             {
                 result.LastResult = prediction;

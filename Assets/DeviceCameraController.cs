@@ -217,7 +217,7 @@ public class DeviceCameraController : MonoBehaviour
             */
 
             // Example of using cumulative:
-            model.CumulativeConfidenceAsync(5f, ref results);
+            model.CumulativeConfidenceAsync(5f, ref results, true);
             if (results.LastResult != null) {
                 var best = results.LastResult.Best();
                 if (results.IsPassedThreshold())
