@@ -227,8 +227,15 @@ namespace Coach
 
     public struct CumulativeConfidenceResult
     {
+        /// <summary>
+        /// Threshold to consider a success
+        /// </summary>
         public float Threshhold;
         public CoachResult LastResult;
+
+        /// <summary>
+        /// Our current, cumulative progress
+        /// </summary>
         public float CumulativeConfidence;
 
         public bool IsPassedThreshold()
@@ -240,15 +247,18 @@ namespace Coach
     public struct LabelProbability
     {
         public string Label { get; set; }
+        /// <summary>
+        /// Confidence score of our prediction, 0.0 = 0%, 1.0 = 100%
+        /// </summary>
         public float Confidence { get; set; }
     }
 
     public class CoachWorker
     {
-        public IWorker Worker { get; private set; }
-        public Texture2D Texture { get; private set; }
-        public Tensor Tensor { get; private set; }
-        public CoachModel Model { get; private set; }
+        private IWorker Worker { get; set; }
+        private Texture2D Texture { get; set; }
+        private Tensor Tensor { get; set; }
+        private CoachModel Model { get; set; }
 
         public CoachWorker(CoachModel model)
         {
@@ -287,7 +297,7 @@ namespace Coach
             return this.Worker.ExecuteAsync(this.Tensor);
         }
 
-        private float GetAsyncProgress()
+        public float GetAsyncProgress()
         {
             return this.Worker.GetAsyncProgress();
         }
@@ -336,22 +346,25 @@ namespace Coach
     {
         private readonly float COACH_VERSION = 2f;
 
-        public string[] Labels { get; set; }
-        public ImageDims ImageDims { get; set; }
+        public string[] Labels { get; private set; }
+        public ImageDims ImageDims { get; private set; }
 
         public string InputName { get; private set; }
         public string OutputName { get; private set; }
 
+        /// <summary>
+        /// Barracuda model
+        /// </summary>
         public Model Model { get; private set; }
 
         private List<CoachWorker> Workers = new List<CoachWorker>();
-
 
         ///<summary>
         ///<param>Model graph</param>
         ///<param>Model labels</param>
         ///<param>Base module used for training</param>
         ///<param>Model SDK version</param>
+        ///<paramref name="workers">Number of workers to spawn</paramref>
         ///</summary>
         public CoachModel(Model model, string[] labels, string module, float coachVersion, int workers = 1, string inputName = "input", string outputName = "output")
         {
@@ -378,11 +391,28 @@ namespace Coach
             }
         }
 
+        public string WorkerSummary()
+        {
+            string r = "";
+            for (var i = 0; i < Workers.Count(); i++)
+            {
+                var worker = Workers[i];
+                r += $"{i}: {worker.GetAsyncProgress()}\n";
+            }
+            return r;
+        }
+
+        /// <summary>
+        /// Whether or not all workers are currently busy
+        /// </summary>
         public bool AllWorkersBusy()
         {
             return this.Workers.Select(w => w.IsAvailable()).Contains(false);
         }
 
+        /// <summary>
+        /// Whether or not there is an available worker
+        /// </summary>
         public bool WorkerAvailable()
         {
             return this.Workers.Select(w => w.IsAvailable()).Contains(true);
@@ -410,6 +440,7 @@ namespace Coach
         ///<param>Path to the sample image</param>
         ///<param>Name of the input in the graph</param>
         ///<param>Name of the output in the graph</param>
+        ///<paramref name="destroyTexture">Optional param to destroy the associated Texture2D when prediction is finished</paramref>
         ///</summary>
         public CoachResult Predict(Texture2D texture, bool destroyTexture = false)
         {
@@ -429,7 +460,7 @@ namespace Coach
         }
 
         ///<summary>
-        ///Parses the specified image bytes as a Tensor and runs it through the loaded model
+        /// Parses the specified image bytes as a Tensor and runs it through the loaded model
         ///<param>Image as byte array</param>
         ///<param>Name of the input in the graph</param>
         ///<param>Name of the output in the graph</param>
@@ -440,16 +471,12 @@ namespace Coach
             return GetModelResult(imageTensor);
         }
 
-        public IEnumerator PredictAsync(Tensor imageTensor)
-        {
-            var worker = GetFirstAvailableWorker();
-            if (worker != null)
-            {
-                yield return worker.ExecuteAsync(imageTensor);
-            }
-            yield return null;
-        }
-
+        /// <summary>
+        /// Runs prediction on input Texture2D async with first available worker in queue.
+        /// Used in tandem with GetPredictionResultAsync() to get prediction results.
+        /// </summary>
+        /// <param name="image">Input Texture2D to predict</param>
+        /// <returns>Coroutine</returns>
         public IEnumerator PredictAsync(Texture2D image)
         {
             var worker = GetFirstAvailableWorker();
@@ -460,6 +487,47 @@ namespace Coach
             yield return null;
         }
 
+        /// <summary>
+        /// Runs prediction on input image async with first available worker in queue.
+        /// Used in tandem with GetPredictionResultAsync() to get prediction results.
+        /// </summary>
+        /// <param name="image">Path of image to run prediction on</param>
+        /// <returns>Coroutine</returns>
+        public IEnumerator PredictAsync(string image)
+        {
+            var imageTensor = ReadTensorFromFile(image);
+            var worker = GetFirstAvailableWorker();
+            if (worker != null)
+            {
+                yield return worker.ExecuteAsync(imageTensor);
+            }
+            yield return null;
+        }
+
+        /// <summary>
+        /// Runs prediction on input image async with first available worker in queue.
+        /// Used in tandem with GetPredictionResultAsync() to get prediction results.
+        /// </summary>
+        /// <param name="image">Image as byte array to run prediction on</param>
+        /// <returns>Coroutine</returns>
+        public IEnumerator PredictAsync(byte[] image)
+        {
+            var imageTensor = ReadTensorFromBytes(image);
+            var worker = GetFirstAvailableWorker();
+            if (worker != null)
+            {
+                yield return worker.ExecuteAsync(imageTensor);
+            }
+            yield return null;
+        }
+
+        /// <summary>
+        /// Runs prediction until the consecutive, cumulative score matches or goes above the specified threshold.
+        /// When a prediction does not match the previous prediction, the counter is reset.
+        /// </summary>
+        /// <param name="image">Input Texture2D to predict</param>
+        /// <param name="threshhold">Score to consider</param>
+        /// <param name="result">The output CumulativeConfidenceResult to update</param>
         public void CumulativeConfidence(Texture2D image, float threshhold, ref CumulativeConfidenceResult result)
         {
             string prevLabel = null;
@@ -476,6 +544,12 @@ namespace Coach
                 result.CumulativeConfidence += prediction.Best().Confidence;
         }
 
+        /// <summary>
+        /// Runs prediction until the consecutive, cumulative score matches or goes above the specified threshold.
+        /// When a prediction does not match the previous prediction, the counter is reset. To be used with PredictAsync
+        /// </summary>
+        /// <param name="threshhold">Score to consider</param>
+        /// <param name="result">The output CumulativeConfidenceResult to update</param>
         public void CumulativeConfidenceAsync(float threshhold, ref CumulativeConfidenceResult result)
         {
             string prevLabel = null;
@@ -494,7 +568,7 @@ namespace Coach
                     result.CumulativeConfidence += prediction.Best().Confidence;
             }
         }
-
+        
         private CoachResult GetModelResult(Texture2D texture, bool destroyTexture = false)
         {
             var worker = GetFirstAvailableWorker();
@@ -527,6 +601,11 @@ namespace Coach
             return null;
         }
 
+        /// <summary>
+        /// Gets the result of an async prediction
+        /// </summary>
+        /// <param name="destroyTexture">Optional param to destroy the input Texute2D when the prediction results are found</param>
+        /// <returns>CoachResult when there is a result, otherwise null</returns>
         public CoachResult GetPredictionResultAsync(bool destroyTexture = false)
         {
             foreach (var worker in this.Workers)
@@ -541,11 +620,14 @@ namespace Coach
             return null;
         }
 
+        /// <summary>
+        /// Disposes of all workers and associated resources
+        /// </summary>
         public void CleanUp()
         {
             foreach (var worker in Workers)
             {
-                worker.Dispose();
+                worker.Dispose(true);
             }
         }
     }

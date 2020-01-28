@@ -148,7 +148,7 @@ public class GenericWorker : IWorker
 
     public virtual void ResetAsyncProgress()
     {
-        //m_Progress = 0f;
+        m_Progress = 0f;
     }
 
     public virtual IEnumerator ExecuteAsync()

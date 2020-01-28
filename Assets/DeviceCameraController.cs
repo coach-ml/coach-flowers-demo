@@ -205,7 +205,19 @@ public class DeviceCameraController : MonoBehaviour
                 StartCoroutine(model.PredictAsync(GetWebcamPhoto()));
             }
 
-            /*model.CumulativeConfidenceAsync(5f, ref results);
+            /* Check for results every Update
+            var modelResult = model.GetPredictionResultAsync(true);
+            if (modelResult != null)
+            {
+                var best = modelResult.Best();
+
+                Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
+                predictionResult.text = best.Label + ": " + best.Confidence;
+            }
+            */
+
+            // Example of using cumulative:
+            model.CumulativeConfidenceAsync(5f, ref results);
             if (results.LastResult != null) {
                 var best = results.LastResult.Best();
                 if (results.IsPassedThreshold())
@@ -215,23 +227,13 @@ public class DeviceCameraController : MonoBehaviour
                     var result = $"{best.Label}: {best.Confidence}";
                     predictionResult.text = result;
                 }
-                // Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
-            }*/
-
-            // Always check for results
-            var modelResult = model.GetPredictionResultAsync(true);
-            if (modelResult != null)
-            {
-                var best = modelResult.Best();
-
                 Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
-                predictionResult.text = best.Label + ": " + best.Confidence;
             }
         }
     }
 
     private void OnDestroy()
     {
-        // model.CleanUp();
+        model.CleanUp();
     }
 }
