@@ -146,6 +146,11 @@ public class GenericWorker : IWorker
         return m_Progress;
     }
 
+    public virtual void ResetAsyncProgress()
+    {
+        m_Progress = 0f;
+    }
+
     public virtual IEnumerator ExecuteAsync()
     {
         Profiler.BeginSample ("Barracuda.Execute");

@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Linq;
-using System.Collections;
 using Coach;
+using Barracuda;
+using System.Collections.Generic;
 
 public class DeviceCameraController : MonoBehaviour
 {
@@ -33,9 +34,22 @@ public class DeviceCameraController : MonoBehaviour
     Vector3 defaultScale = new Vector3(1f, 1f, 1f);
     Vector3 fixedScale = new Vector3(-1f, 1f, 1f);
 
+    private readonly int Workers = 4;
+
 
     async void Start()
     {
+        var gpuName = SystemInfo.graphicsDeviceName;
+        if (gpuName != null)
+        {
+            Debug.Log("GPU: " + gpuName);
+            int gpuNumber = 0, idx = "Apple A".Length;
+            while (idx < gpuName.Length && '0' <= gpuName[idx] && gpuName[idx] <= '9')
+            {
+                gpuNumber = gpuNumber * 10 + gpuName[idx++] - '0';
+            }
+            Debug.Log("GPU COUNT: " + gpuNumber);
+        }
         // Check for device cameras
         if (WebCamTexture.devices.Length == 0)
         {
@@ -72,7 +86,7 @@ public class DeviceCameraController : MonoBehaviour
 
         // Download Coach model
         var coach = await new CoachClient().Login("A2botdrxAn68aZh8Twwwt2sPBJdCfH3zO02QDMt0");
-        model = await coach.GetModelRemote("small_flowers");
+        model = await coach.GetModelRemote("small_flowers", workers: this.Workers);
     }
 
     public Texture2D GetWebcamPhoto()
@@ -94,7 +108,7 @@ public class DeviceCameraController : MonoBehaviour
 
         var prediction = model.Predict(photo);
         var best = prediction.Best();
-        predictionResult.text = best.Label;
+        predictionResult.text = best.Label + ": " + best.Confidence.ToString();
         Debug.Log("Guessing: " + best.Label + ": " + best.Confidence.ToString());
         string z = "";
         foreach (var r in prediction.SortedResults)
@@ -105,18 +119,8 @@ public class DeviceCameraController : MonoBehaviour
     }
 
     public void PredictWebcam() {
-        var photo = GetWebcamPhoto();
-
-        var prediction = model.Predict(photo);
-        var best = prediction.Best();
-        predictionResult.text = best.Label;
-        Debug.Log("Guessing: " + best.Label + ": " + best.Confidence.ToString());
-        string z = "";
-        foreach (var r in prediction.SortedResults)
-        {
-            z += r.Label + ": " + r.Confidence + ", ";
-        }
-        Debug.Log(z);
+        //var photo = GetWebcamPhoto();
+        // var prediction = model.Predict(photo);
     }
 
     public void Play()
@@ -162,6 +166,9 @@ public class DeviceCameraController : MonoBehaviour
 
     // Make adjustments to image every frame to be safe, since Unity isn't 
     // guaranteed to report correct data as soon as device camera is started
+
+    CumulativeConfidenceResult results;
+    float aTime = 0;
     void Update()
     {
         // Skip making adjustment for incorrect camera data
@@ -190,7 +197,43 @@ public class DeviceCameraController : MonoBehaviour
             activeCameraDevice.isFrontFacing ? fixedScale : defaultScale;
 
         if (model != null) {
-            // Do something maybe
+            // Every once in a while when the workers aren't busy
+            aTime += Time.deltaTime;
+            if (aTime >= 0.5f && model.WorkerAvailable())
+            {
+                aTime = 0;
+                StartCoroutine(model.PredictAsync(GetWebcamPhoto()));
+            }
+
+            /* Check for results every Update
+            var modelResult = model.GetPredictionResultAsync(true);
+            if (modelResult != null)
+            {
+                var best = modelResult.Best();
+
+                Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
+                predictionResult.text = best.Label + ": " + best.Confidence;
+            }
+            */
+
+            // Example of using cumulative:
+            model.CumulativeConfidenceAsync(5f, ref results, true);
+            if (results.LastResult != null) {
+                var best = results.LastResult.Best();
+                if (results.IsPassedThreshold())
+                {
+                    Debug.LogWarning("Passed the threshold");
+
+                    var result = $"{best.Label}: {best.Confidence}";
+                    predictionResult.text = result;
+                }
+                Debug.Log("We have a result: " + best.Label + ": " + best.Confidence);
+            }
         }
+    }
+
+    private void OnDestroy()
+    {
+        model.CleanUp();
     }
 }
